@@ -10,18 +10,23 @@ function WallEModel() {
   useFrame((state) => {
     if (ref.current) {
       ref.current.rotation.y += 0.005;
-      ref.current.position.y = Math.sin(state.clock.elapsedTime) * 0.2 - 1.5;
+
+
+      const baseY = -1.3;  
+      const posX = 0.5;   
+      ref.current.position.set(posX, Math.sin(state.clock.elapsedTime) * 0.2 + baseY, 0);
     }
   });
 
-  return <primitive ref={ref} object={scene} scale={2.3} />;
+  return <primitive ref={ref} object={scene} scale={2.8} />;
 }
+
 
 export default function Landing() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-black via-gray-800 to-black text-white flex flex-col-reverse md:flex-row items-center justify-between px-6 md:px-16 py-10 gap-6 md:gap-16">
+    <div className="min-h-screen w-full bg-gradient-to-br from-black via-gray-800 to-black text-white flex flex-col-reverse md:flex-row items-center px-6 md:px-16 py-10 gap-6 md:gap-16">
       
       <div dir="rtl" className="w-full md:w-1/2 space-y-6 text-center">
         <h1 className="text-3xl md:text-5xl font-extrabold leading-snug text-balance text-white">
