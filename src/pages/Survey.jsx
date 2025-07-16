@@ -1,7 +1,9 @@
+import { useState, Suspense, useRef } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
-import { Suspense, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
+import "../components/GlassButton.css";
 
 const models = ["laptop", "keyboard", "case", "computer"];
 
@@ -20,7 +22,8 @@ function Model3D({ name }) {
   useFrame((state) => {
     if (ref.current) {
       ref.current.rotation.y += 0.003;
-      ref.current.position.y = Math.sin(state.clock.elapsedTime) * 0.2 + config.position[1];
+      ref.current.position.y =
+        Math.sin(state.clock.elapsedTime) * 0.2 + config.position[1];
     }
   });
 
@@ -31,7 +34,12 @@ const steps = [
   {
     title: "مرحله ۱: علایق فردی",
     question: "به کدام یک علاقه‌مندتری؟",
-    options: ["برنامه‌نویسی", "هوش مصنوعی", "تحقیق و پژوهش", "کار تیمی و پروژه"],
+    options: [
+      "برنامه‌نویسی",
+      "هوش مصنوعی",
+      "تحقیق و پژوهش",
+      "کار تیمی و پروژه",
+    ],
   },
   {
     title: "مرحله ۲: مهارت و تجربه",
@@ -46,7 +54,12 @@ const steps = [
   {
     title: "مرحله ۴: هدف نهایی",
     question: "به کدوم مسیر بیشتر فکر می‌کنی؟",
-    options: ["ادامه تحصیل (ارشد/دکترا)", "ورود به بازار کار", "استارتاپ", "مهاجرت تحصیلی"],
+    options: [
+      "ادامه تحصیل (ارشد/دکترا)",
+      "ورود به بازار کار",
+      "استارتاپ",
+      "مهاجرت تحصیلی",
+    ],
   },
 ];
 
@@ -74,34 +87,39 @@ export default function Survey() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-r from-black to-gray-500 text-white flex flex-col md:flex-row-reverse items-center justify-center p-6 gap-6 md:gap-10">
-
-      {/* مدل سه‌بعدی سمت راست */}
+    <div className="min-h-screen w-full bg-gradient-to-br from-black via-gray-800 to-black text-white flex flex-col md:flex-row-reverse items-center justify-center p-6 gap-6 md:gap-10">
+      
+      {/* مدل سه‌بعدی */}
       <div className="w-full md:w-1/2 h-[300px] md:h-[500px] relative z-0">
         <Canvas camera={{ position: [0, 0, 5], fov: 50 }}>
           <ambientLight intensity={1} />
           <directionalLight position={[3, 3, 3]} intensity={1.5} />
+          <pointLight position={[-2, -2, 3]} intensity={60} color="gold" />
           <Suspense fallback={null}>
             <Model3D name={modelName} />
           </Suspense>
         </Canvas>
       </div>
 
-      {/* فرم شیشه‌ای سمت چپ */}
-      <div className="w-full md:w-1/2 z-10 backdrop-blur-lg bg-white/5 border border-white/30 rounded-xl p-6 md:p-10 shadow-2xl space-y-6">
+      {/* فرم مرحله‌ای */}
+      <div className="w-full md:w-1/2 z-10 backdrop-blur-lg bg-white/5 border border-amber-500/60 rounded-xl p-6 md:p-10 shadow-2xl space-y-6">
         <div className="flex justify-between items-center mb-2">
-          <span className="text-xs text-gray-400">سؤال {step + 1} از {steps.length}</span>
+          <span className="text-xs text-gray-400">
+            سؤال {step + 1} از {steps.length}
+          </span>
         </div>
 
         <h2 className="text-xl md:text-2xl font-bold text-right">{current.title}</h2>
-        <p className="text-sm md:text-base text-right text-gray-300">{current.question}</p>
+        <p className="text-sm md:text-base text-right text-gray-200">
+          {current.question}
+        </p>
 
         <div className="space-y-4">
           {current.options.map((opt, i) => (
             <button
               key={i}
               onClick={() => handleAnswer(opt)}
-              className="w-full text-right px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition"
+              className="option-button"
             >
               {opt}
             </button>
@@ -109,12 +127,13 @@ export default function Survey() {
         </div>
 
         {step > 0 && (
-          <div className="pt-4 flex justify-end">
+          <div className="pt-4 flex justify-start">
             <button
               onClick={handleBack}
-              className="text-2xl text-gray-300 hover:text-white transition"
+              className="inline-flex items-center gap-2 px-5 py-2 bg-white/10 border border-amber-500/60 text-white  rounded-lg hover:scale-105 transition font-medium shadow-md"
             >
-              ↩️
+              <ArrowLeft className="w-5 h-5" />
+              بازگشت
             </button>
           </div>
         )}
