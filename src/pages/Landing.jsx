@@ -38,7 +38,7 @@ function LogoModel() {
     }
   });
 
-  return <primitive ref={ref} object={scene} scale={0.035} position={[0, 0, 0]} />;
+  return <primitive ref={ref} object={scene} scale={0.02} position={[0, -2, 0]} />;
 }
 
 export default function Landing() {

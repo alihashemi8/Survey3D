@@ -124,3 +124,17 @@
     0 0 4px rgba(245, 158, 11, 0.2),
     0 0 10px rgba(245, 158, 11, 0.15);
 }
+.option-button {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.option-button:hover {
+  background-color: rgba(245, 158, 11, 0.2); /* amber-400/20 */
+}
+
+.option-button.selected {
+  background-color: rgba(245, 158, 11, 0.9); /* amber-500/90 */
+  color: black;
+  font-weight: 600;
+  transform: scale(1.02);
+}

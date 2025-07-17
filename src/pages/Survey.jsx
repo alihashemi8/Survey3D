@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import "../components/GlassButton.css";
 
-const models = ["laptop", "keyboard", "case", "computer"];
+const models = ["laptop", "keyboard", "case", "computer", "laptop", "keyboard"];
 
 const modelConfigs = {
   laptop: { scale: 1.7, position: [0, 0.2, 0] },
@@ -32,53 +32,117 @@ function Model3D({ name }) {
 
 const steps = [
   {
-    title: "مرحله ۱: علایق فردی",
-    question: "به کدام یک علاقه‌مندتری؟",
+    title: "علاقه‌ات بیشتر به کدام حوزه‌هاست؟",
+    type: "multiple",
     options: [
-      "برنامه‌نویسی",
+      "هوش مصنوعی و تحلیل داده",
+      "(UI/UX) طراحی وب و رابط کاربری",
+      "سخت‌افزار و رباتیک",
+      " امنیت سایبری و هک",
+      "توسعه اپلیکیشن موبایل",
+      "بازی‌سازی",
+      "شبکه",
+      "تدریس و پژوهش دانشگاهی",
+    ],
+    key: "interests",
+  },
+  {
+    title: "سطح مهارت و تجربه‌ات در برنامه‌نویسی و کار مورد علاقه ات چقدره؟",
+    type: "single",
+    options: ["تازه میخوام شروع کنم", "مبتدی", "متوسط", "پیشرفته"],
+    key: "experience",
+  },
+  {
+    title: "چه مهارت‌هایی داری یا تا الان تجربه کردی؟",
+    type: "multiple",
+    options: [
+      "طراحی وب",
+      "تحلیل داده",
       "هوش مصنوعی",
-      "تحقیق و پژوهش",
-      "کار تیمی و پروژه",
+      "امنیت",
+      "توسعه موبایل",
+      "ساخت بازی",
+      "شبکه",
+      "تجربه‌ای ندارم",
     ],
+    key: "skills",
   },
   {
-    title: "مرحله ۲: مهارت و تجربه",
-    question: "سطح مهارت فعلی‌ات در برنامه‌نویسی چقدره؟",
-    options: ["مبتدی", "متوسط", "پیشرفته", "کار نکردم"],
-  },
-  {
-    title: "مرحله ۳: اولویت‌گذاری",
-    question: "در تصمیم‌گیری برای آینده، کدوم برات مهم‌تره؟",
-    options: ["درآمد بالا", "تحصیلات عالی", "امنیت شغلی", "آزادی شغلی"],
-  },
-  {
-    title: "مرحله ۴: هدف نهایی",
-    question: "به کدوم مسیر بیشتر فکر می‌کنی؟",
+    title: "برنامه‌ات برای ادامه مسیر چیه؟",
+    type: "single",
     options: [
-      "ادامه تحصیل (ارشد/دکترا)",
-      "ورود به بازار کار",
-      "استارتاپ",
-      "مهاجرت تحصیلی",
+      "ورود سریع به بازار کار",
+      "ادامه تحصیل در ایران",
+      "ادامه تحصیل در خارج از کشور",
+      "کار و ادامه تحصیل در ایران",
+      "کار و ادامه تحصیل در خارج",
     ],
+    key: "plan",
+  },
+  {
+    title: "چه مدل کاری برای آینده برات جذاب‌تره؟",
+    type: "multiple",
+    options: [
+      "پژوهشی",
+      "فریلنسری",
+      "شرکت یا گروه",
+      "ادامه تحصیل",
+      "استارتاپ",
+      "ترکیب دلخواه خودم",
+    ],
+    key: "workStyle",
+  },
+  {
+    title: "کدوم مورد برات اولویت بیشتری داره؟",
+    type: "multiple",
+    options: [
+      "درآمد بالا",
+      "یادگیری عمیق",
+      "پایداری شغلی",
+      "امکان مهاجرت",
+      "آزادی و خلاقیت",
+    ],
+    key: "priority",
   },
 ];
 
 export default function Survey() {
   const [step, setStep] = useState(0);
-  const [answers, setAnswers] = useState([]);
-  const current = steps[step];
-  const modelName = models[step];
+  const [answers, setAnswers] = useState({});
   const navigate = useNavigate();
 
-  const handleAnswer = (option) => {
-    const updated = [...answers];
-    updated[step] = option;
-    setAnswers(updated);
+  const current = steps[step];
+  const modelName = models[step];
+  const currentAnswer =
+    answers[current.key] || (current.type === "multiple" ? [] : "");
+
+  const toggleOption = (option) => {
+    if (current.type === "multiple") {
+      const alreadySelected = currentAnswer.includes(option);
+      const updated = alreadySelected
+        ? currentAnswer.filter((item) => item !== option)
+        : [...currentAnswer, option];
+      setAnswers({ ...answers, [current.key]: updated });
+    } else {
+      setAnswers({ ...answers, [current.key]: option });
+    }
+  };
+
+  const handleNext = () => {
+    const answer = answers[current.key];
+    if (current.type === "multiple" && (!answer || answer.length === 0)) {
+      alert("حداقل یک گزینه را انتخاب کن");
+      return;
+    }
+    if (current.type === "single" && !answer) {
+      alert("لطفاً یک گزینه انتخاب کن");
+      return;
+    }
 
     if (step < steps.length - 1) {
       setStep(step + 1);
     } else {
-      navigate("/result", { state: { answers: updated } });
+      navigate("/result", { state: { answers } });
     }
   };
 
@@ -88,7 +152,6 @@ export default function Survey() {
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-black via-gray-800 to-black text-white flex flex-col md:flex-row-reverse items-center justify-center p-6 gap-6 md:gap-10">
-      
       {/* مدل سه‌بعدی */}
       <div className="w-full md:w-1/2 h-[300px] md:h-[500px] relative z-0">
         <Canvas camera={{ position: [0, 0, 5], fov: 50 }}>
@@ -101,7 +164,7 @@ export default function Survey() {
         </Canvas>
       </div>
 
-      {/* فرم مرحله‌ای */}
+      {/* فرم سوال */}
       <div className="w-full md:w-1/2 z-10 backdrop-blur-lg bg-white/5 border border-amber-500/60 rounded-xl p-6 md:p-10 shadow-2xl space-y-6">
         <div className="flex justify-between items-center mb-2">
           <span className="text-xs text-gray-400">
@@ -109,34 +172,49 @@ export default function Survey() {
           </span>
         </div>
 
-        <h2 className="text-xl md:text-2xl font-bold text-right">{current.title}</h2>
-        <p className="text-sm md:text-base text-right text-gray-200">
-          {current.question}
-        </p>
+        <h2 className="text-xl md:text-2xl font-bold text-right">
+          {current.title}
+        </h2>
 
         <div className="space-y-4">
-          {current.options.map((opt, i) => (
-            <button
-              key={i}
-              onClick={() => handleAnswer(opt)}
-              className="option-button"
-            >
-              {opt}
-            </button>
-          ))}
+          {current.options.map((opt, i) => {
+            const selected =
+              current.type === "multiple"
+                ? currentAnswer.includes(opt)
+                : currentAnswer === opt;
+
+            return (
+              <button
+                key={i}
+                onClick={() => toggleOption(opt)}
+                className={`option-button ${selected ? "selected" : ""}`}
+              >
+                {opt}
+              </button>
+            );
+          })}
         </div>
 
-        {step > 0 && (
-          <div className="pt-4 flex justify-start">
+        <div className="flex justify-between pt-6">
+          {step > 0 ? (
             <button
               onClick={handleBack}
-              className="inline-flex items-center gap-2 px-5 py-2 bg-white/10 border border-amber-500/60 text-white  rounded-lg hover:scale-105 transition font-medium shadow-md"
+              className="inline-flex items-center gap-2 px-5 py-2 bg-white/10 border border-amber-500/60 text-white rounded-lg hover:scale-105 transition font-medium shadow-md"
             >
               <ArrowLeft className="w-5 h-5" />
               بازگشت
             </button>
-          </div>
-        )}
+          ) : (
+            <span />
+          )}
+
+          <button
+            onClick={handleNext}
+            className="inline-flex items-center gap-2 px-5 py-2 bg-white/10 border border-amber-500/60 text-white rounded-lg hover:scale-105 transition font-medium shadow-md"
+          >
+            {step === steps.length - 1 ? "مشاهده نتیجه" : "ادامه"}
+          </button>
+        </div>
       </div>
     </div>
   );
