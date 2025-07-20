@@ -3,12 +3,29 @@ import { OrbitControls, useGLTF } from "@react-three/drei";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Suspense } from "react";
 import ResultSummary from "../components/ResultSummary";
-import { analyzePath } from "../utils/PathAnalysis";
+import { analyzePath } from "../utils/analyzePath";
 import { pathInfo } from "../utils/pathInfo";
+import { useRef } from "react";
+import { useFrame } from "@react-three/fiber";
 
 function EvaModel() {
-  const eva = useGLTF("/models/eva.glb");
-  return <primitive object={eva.scene} scale={1} position={[0, -0.5, 0]} />;
+  const { scene } = useGLTF("/models/eva.glb");
+  const ref = useRef();
+
+  useFrame((state) => {
+    if (ref.current) {
+      ref.current.rotation.y += 0.005;
+      const baseY = -0.5;
+      const posX = 0;
+      ref.current.position.set(
+        posX,
+        Math.sin(state.clock.elapsedTime) * 0.2 + baseY,
+        0
+      );
+    }
+  });
+
+  return <primitive ref={ref} object={scene} scale={1} />;
 }
 
 // کامپوننت برای نمایش توضیحات مسیر در صفحه نتایج
@@ -23,7 +40,9 @@ function PathDetailInline({ pathKey }) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <h3 className="font-semibold text-cyan-200 mb-2">مهارت‌های پیشنهادی</h3>
+          <h3 className="font-semibold text-cyan-200 mb-2">
+            مهارت‌های پیشنهادی
+          </h3>
           <ul className="list-disc list-inside">
             {info.skills.map((s, i) => (
               <li key={i}>{s}</li>
@@ -52,7 +71,7 @@ export default function Result() {
   const location = useLocation();
   const navigate = useNavigate();
   const answers = location.state?.answers || {};
-console.log("Answers in Result:", answers);
+  console.log("Answers in Result:", answers);
   // تحلیل مسیر
   const analysis = analyzePath(answers);
 
@@ -86,7 +105,14 @@ console.log("Answers in Result:", answers);
 
         <div className="flex flex-col md:flex-row gap-4 justify-center md:justify-center mt-6">
           <button
-            onClick={() => navigate("/roadmap")}
+            onClick={() =>
+              navigate("/pathDetails", {
+                state: {
+                  answers,
+                  analysis,
+                },
+              })
+            }
             className="bg-white/20 border-b-2 border-l-2 border border-l-amber-300 border-b-amber-300 border-r-amber-300 shadow-md/80 shadow-amber-300 text-white px-6 py-3 rounded-lg hover:bg-white/30 hover:scale-102 transition"
           >
             توضیحات کامل + نقشه راه

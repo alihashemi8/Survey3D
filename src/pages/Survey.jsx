@@ -1,11 +1,11 @@
-import { useState, Suspense, useRef } from "react";
+import { useState, Suspense, useRef, useCallback } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import "../components/GlassButton.css";
 
-const models = ["laptop", "keyboard", "case", "computer", "laptop", "keyboard"];
+const models = ["laptop", "keyboard", "case", "computer", "laptop", "keyboard" , "case"];
 
 const modelConfigs = {
   laptop: { scale: 1.7, position: [0, 0.2, 0] },
@@ -38,18 +38,19 @@ const steps = [
       "هوش مصنوعی و تحلیل داده",
       "(UI/UX) طراحی وب و رابط کاربری",
       "سخت‌افزار و رباتیک",
-      " امنیت سایبری و هک",
-      "توسعه اپلیکیشن موبایل",
+      "امنیت سایبری و هک",
+      "(android/ios/windows)توسعه اپلیکیشن",
       "بازی‌سازی",
       "شبکه",
       "تدریس و پژوهش دانشگاهی",
+      "نمی دونم",
     ],
     key: "interests",
   },
   {
     title: "سطح مهارت و تجربه‌ات در برنامه‌نویسی و کار مورد علاقه ات چقدره؟",
     type: "single",
-    options: ["تازه میخوام شروع کنم", "مبتدی", "متوسط", "پیشرفته"],
+    options: ["شروع نکردم", "مبتدی", "متوسط", "پیشرفته"],
     key: "experience",
   },
   {
@@ -66,6 +67,23 @@ const steps = [
       "تجربه‌ای ندارم",
     ],
     key: "skills",
+  },
+  {
+    title: "با کدام زبان برنامه نویسی یا نشانه گذاری بیشتر کار کردی؟",
+    type: "multiple",
+    options: [
+      "C , C++",
+      "Java",
+      "JavaScript",
+      "Python",
+      "php",
+      "C#",
+      "Kotlin , Swift",
+      "GO",
+      "HTML , CSS",
+      "موارد دیگر"
+    ],
+    key: "language",
   },
   {
     title: "برنامه‌ات برای ادامه مسیر چیه؟",
@@ -88,9 +106,8 @@ const steps = [
       "شرکت یا گروه",
       "ادامه تحصیل",
       "استارتاپ",
-      "ترکیب دلخواه خودم",
     ],
-    key: "workStyle",
+    key: "goal",
   },
   {
     title: "کدوم مورد برات اولویت بیشتری داره؟",
@@ -116,17 +133,31 @@ export default function Survey() {
   const currentAnswer =
     answers[current.key] || (current.type === "multiple" ? [] : "");
 
-  const toggleOption = (option) => {
-    if (current.type === "multiple") {
-      const alreadySelected = currentAnswer.includes(option);
-      const updated = alreadySelected
-        ? currentAnswer.filter((item) => item !== option)
-        : [...currentAnswer, option];
-      setAnswers({ ...answers, [current.key]: updated });
-    } else {
-      setAnswers({ ...answers, [current.key]: option });
-    }
-  };
+  const toggleOption = useCallback(
+    (option) => {
+      if (current.type === "multiple") {
+        const alreadySelected = currentAnswer.includes(option);
+        let updated;
+
+        // اگر گزینه "تجربه‌ای ندارم" انتخاب شده، همه گزینه‌ها غیر از اون حذف بشن
+        if (option === "تجربه‌ای ندارم") {
+          updated = alreadySelected ? [] : [option];
+        } else {
+          // اگه "تجربه‌ای ندارم" قبلا انتخاب شده بود، حذفش کنیم
+          const withoutNoExperience = currentAnswer.filter(
+            (item) => item !== "تجربه‌ای ندارم"
+          );
+          updated = alreadySelected
+            ? withoutNoExperience.filter((item) => item !== option)
+            : [...withoutNoExperience, option];
+        }
+        setAnswers({ ...answers, [current.key]: updated });
+      } else {
+        setAnswers({ ...answers, [current.key]: option });
+      }
+    },
+    [answers, current.key, current.type, currentAnswer]
+  );
 
   const handleNext = () => {
     const answer = answers[current.key];
@@ -177,7 +208,7 @@ export default function Survey() {
         </h2>
 
         <div className="space-y-4">
-          {current.options.map((opt, i) => {
+          {current.options.map((opt) => {
             const selected =
               current.type === "multiple"
                 ? currentAnswer.includes(opt)
@@ -185,8 +216,9 @@ export default function Survey() {
 
             return (
               <button
-                key={i}
+                key={opt}
                 onClick={() => toggleOption(opt)}
+                aria-pressed={selected}
                 className={`option-button ${selected ? "selected" : ""}`}
               >
                 {opt}
