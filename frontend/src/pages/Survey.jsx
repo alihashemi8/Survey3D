@@ -173,6 +173,7 @@ export default function Survey() {
     if (step < steps.length - 1) {
       setStep(step + 1);
     } else {
+      localStorage.setItem("answers", JSON.stringify(answers));
       navigate("/result", { state: { answers } });
     }
   };

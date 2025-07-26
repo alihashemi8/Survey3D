@@ -1,48 +1,77 @@
+import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { useMemo } from "react";
-import { analyzePath } from "../utils/analyzePath";
-import { getAdvancedSummary } from "../utils/getAdvancedSummary";
+import axios from "axios";
 
-export default function PathDetails() {
-const location = useLocation();
-const answers = location.state?.answers || {};
-const analysis = location.state?.analysis || analyzePath(answers);
- 
+function PathDetails() {
+  const location = useLocation();
+  const answers = location.state?.answers;
 
-  const details = useMemo(
-    () =>
-      getAdvancedSummary({
-        mainPath: analysis.mainPath,
-        top3: analysis.top3,
-        priorityList: analysis.priorityList,
-        goalList: analysis.goalList,
-        planList: analysis.planList,
-        details: analysis.details, // حتماً اینجا اضافه شود
-      }),
-    [analysis]
-  );
+  const [analysis, setAnalysis] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  if (!details || details.length === 0) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-white bg-gradient-to-b from-[#0f0f1a] to-[#1a1a2e]">
-        <p>اطلاعات کافی برای نمایش مسیر وجود ندارد.</p>
-      </div>
-    );
-  }
+  useEffect(() => {
+    const fetchAnalysis = async () => {
+      if (!answers) return;
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        console.log("🔍 در حال ارسال به بک‌اند:", answers);
+        const response = await axios.post("http://127.0.0.1:8000/api/chatgpt_analysis/", { answers });
+        console.log("✅ تحلیل دریافت شد:", response.data);
+        setAnalysis(response.data);
+      } catch (err) {
+        setError(err.message || "خطا در دریافت داده");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAnalysis();
+  }, [answers]);
+
+  if (loading) return <div className="p-6 text-white">در حال بارگذاری...</div>;
+  if (error) return <div className="p-6 text-red-400">خطا: {error}</div>;
+  if (!analysis) return <div className="p-6 text-white">تحلیلی دریافت نشد</div>;
 
   return (
-    <div className="min-h-screen px-4 py-12 md:px-20 bg-gradient-to-b from-[#0f0f1a] to-[#1a1a2e] text-white">
-      {details.map((item, index) => (
-        <div
-          key={index}
-          className="bg-white/5 backdrop-blur-md p-6 rounded-xl border border-white/10 shadow-xl max-w-3xl mx-auto mb-8"
-        >
-          <h2 className="text-amber-300 text-lg font-bold mb-2">
-            {item.title}
-          </h2>
-          <p className="text-white/90 leading-relaxed">{item.content}</p>
-        </div>
-      ))}
+    <div className="p-8 max-w-3xl mx-auto text-white space-y-8">
+      <h1 className="text-3xl font-bold text-cyan-300">تحلیل کامل مسیر شغلی</h1>
+
+      <section>
+        <h2 className="text-2xl text-amber-300 mb-2">🧠 تحلیل کلی</h2>
+        <p className="bg-white/10 p-4 rounded-lg leading-7">{analysis.detailed_analysis}</p>
+      </section>
+
+      <section>
+        <h2 className="text-2xl text-amber-300 mb-2">📌 نقشه راه مهارتی</h2>
+        <p className="bg-white/10 p-4 rounded-lg leading-7">{analysis.skill_roadmap}</p>
+      </section>
+
+      <section>
+        <h2 className="text-2xl text-amber-300 mb-2">✅ مزایا</h2>
+        <ul className="list-disc list-inside bg-white/10 p-4 rounded-lg text-green-400">
+          {analysis.pros_and_cons?.pros.map((item, index) => (
+            <li key={index}>{item}</li>
+          ))}
+        </ul>
+
+        <h2 className="text-2xl text-amber-300 mt-6 mb-2">⚠️ معایب</h2>
+        <ul className="list-disc list-inside bg-white/10 p-4 rounded-lg text-red-400">
+          {analysis.pros_and_cons?.cons.map((item, index) => (
+            <li key={index}>{item}</li>
+          ))}
+        </ul>
+      </section>
+
+      <section>
+        <h2 className="text-2xl text-amber-300 mb-2">📚 پیشنهادهای یادگیری</h2>
+        <p className="bg-white/10 p-4 rounded-lg leading-7">{analysis.learning_suggestions}</p>
+      </section>
     </div>
   );
 }
+
+export default PathDetails;
