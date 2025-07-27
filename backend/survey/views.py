@@ -1,16 +1,25 @@
-import os
 import json
-import requests
-from dotenv import load_dotenv
-from django.views.decorators.csrf import csrf_exempt
-from django.http import JsonResponse
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from rest_framework import status
+from .utils import get_openai_client
+import os
+from dotenv import load_dotenv
 import re
+
 load_dotenv()
 
-OPENROUTER_API_KEY = os.getenv("OPENAI_API_KEY")
-print("🔑 OPENROUTER_API_KEY:", OPENROUTER_API_KEY)
+def extract_json_from_response(text: str) -> str:
+    """
+    اگر متن با ```json شروع شده و با ``` تمام شده،
+    آن بلاک کد را استخراج و فقط JSON داخلش را برمی‌گرداند.
+    در غیر اینصورت متن بدون تغییر برمی‌گردد.
+    """
+    pattern = r"```json\s*(\{.*\})\s*```"
+    match = re.search(pattern, text, re.DOTALL)
+    if match:
+        return match.group(1)
+    return text.strip()
 
 @api_view(['POST'])
 def submit_results(request):
@@ -18,59 +27,80 @@ def submit_results(request):
     print("✅ نتایج دریافت شد:", data)
     return Response({"message": "نتایج با موفقیت دریافت شد"})
 
-@csrf_exempt
+@api_view(['POST'])
 def chatgpt_analysis(request):
-    if request.method == "POST":
-        print("📥 request.body.decode():", request.body.decode('utf-8'))
+    answers = request.data.get("answers")
+    print("📩 RAW request:", request.data)
+
+    if not answers:
+        return Response({"error": "❌ پاسخ‌ها دریافت نشدند"}, status=status.HTTP_400_BAD_REQUEST)
+
+    prompt = f"""
+شما یک مشاور حرفه‌ای هدایت شغلی هستید.
+بر اساس پاسخ‌های زیر، یک تحلیل جامع ارائه دهید:
+
+پاسخ‌های کاربر:
+{json.dumps(answers, ensure_ascii=False, indent=2)}
+
+پاسخ را در قالب JSON زیر بازگردان:
+{{
+  "detailed_analysis": "تحلیل جامع درباره مسیر شغلی کاربر...",
+  "skill_roadmap": "مراحل مهارتی پیشنهادی...",
+  "pros_and_cons": {{
+    "pros": ["مزیت ۱", "مزیت ۲"],
+    "cons": ["عیب ۱", "عیب ۲"]
+  }},
+  "learning_suggestions": "پیشنهاداتی برای یادگیری بعدی..."
+}}
+    """
+
+    try:
+        client = get_openai_client()
+        print("🚀 ارسال درخواست به GPT از طریق آوالای...")
+
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "شما یک دستیار مشاور شغلی هستید."},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.7,
+            max_tokens=1000,
+        )
+
+        print("✅ پاسخ از GPT دریافت شد")
+
+        result_text = response.choices[0].message.content
+        print("📨 خروجی خام GPT:\n", result_text)
+
+        # پاک‌سازی بلاک کد Markdown اگر وجود داشت
+        cleaned_text = extract_json_from_response(result_text)
 
         try:
-            body = json.loads(request.body)
-            user_prompt = f"""با توجه به اطلاعات زیر یک تحلیل شغلی کامل بده. خروجی باید شامل این بخش‌ها باشه:
-- تحلیل کلی
-- نقشه راه مهارتی
-- مزایا
-- معایب
-- پیشنهادهای یادگیری
+            result_json = json.loads(cleaned_text)
+            print("🟢 خروجی GPT با موفقیت به JSON تبدیل شد")
+            return Response(result_json)
 
-اطلاعات کاربر:
-{json.dumps(body, ensure_ascii=False, indent=2)}
-"""
+        except json.JSONDecodeError as decode_err:
+            print("⚠️ خطا در تبدیل خروجی GPT به JSON:", decode_err)
+            return Response({
+                "error": "خروجی GPT فرمت JSON معتبری نداشت",
+                "raw_output": result_text
+            }, status=status.HTTP_502_BAD_GATEWAY)
 
-            response = requests.post(
-                url="https://openrouter.ai/api/v1/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-                    "Content-Type": "application/json",
-                },
-                json={
-                    "model": "gpt-4o-mini",
-                    "messages": [
-                        {"role": "system", "content": "شما یک مشاور مسیر شغلی هستید."},
-                        {"role": "user", "content": user_prompt},
-                    ],
-                },
-            )
+    except Exception as e:
+        error_message = str(e)
+        print("❌ خطا در تماس با GPT:", error_message)
 
-            result = response.json()
-            ai_message = result["choices"][0]["message"]["content"]
+        if "401" in error_message or "invalid_api_key" in error_message:
+            print("🔐 خطای 401 - کلید نامعتبر یا منقضی شده است")
+            return Response({
+                "error": "کلید API نامعتبر است. لطفاً کلید را بررسی کن."
+            }, status=status.HTTP_401_UNAUTHORIZED)
 
-            # 🔍 پارس کردن خروجی با Regex (بسته به فرمت تولیدشده توسط مدل ممکنه نیاز به تنظیم داشته باشه)
-            def extract_section(text, title):
-                pattern = rf"{title}[:：]\s*(.*?)(?=\n[A-Zآ-ی]{2,}|$)"
-                match = re.search(pattern, text, re.DOTALL | re.IGNORECASE)
-                return match.group(1).strip() if match else ""
+        return Response({
+            "error": "خطایی در پردازش GPT رخ داد",
+            "details": error_message
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-            return JsonResponse({
-                "detailed_analysis": extract_section(ai_message, "تحلیل کلی"),
-                "skill_roadmap": extract_section(ai_message, "نقشه راه"),
-                "pros_and_cons": {
-                    "pros": extract_section(ai_message, "مزایا").split("\n"),
-                    "cons": extract_section(ai_message, "معایب").split("\n"),
-                },
-                "learning_suggestions": extract_section(ai_message, "پیشنهادهای یادگیری"),
-            })
-
-        except Exception as e:
-            return JsonResponse({"error": str(e)}, status=400)
-
-    return JsonResponse({"error": "Only POST method allowed"}, status=405)
+print("🔑 استفاده از کلید:", os.getenv("OPENAI_API_KEY"))
