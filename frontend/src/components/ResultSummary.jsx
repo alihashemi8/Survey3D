@@ -1,25 +1,24 @@
 export default function ResultSummary({ answers }) {
-  // کلیدهای واقعی که در answers استفاده شده‌اند
   const keys = [
     "interests",
     "experience",
     "skills",
+    "language",
     "plan",
-    "workStyle",
+    "goal",
     "priority",
   ];
 
-  // عناوین مراحل به ترتیب کلیدها
-  const steps = [
+  const titles = [
     "مرحله ۱: علایق فردی",
-    "مرحله ۲: مهارت‌ها و تجربه",
-    "مرحله ۳: اولویت‌ها",
-    "مرحله ۴: اهداف آینده",
-    "مرحله ۵: سبک کاری",
-    "مرحله ۶: اولویت‌ها",
+    "مرحله ۲: سطح مهارت",
+    "مرحله ۳: مهارت‌ها",
+    "مرحله ۴: زبان‌های برنامه‌نویسی",
+    "مرحله ۵: برنامه آینده",
+    "مرحله ۶: مدل کاری دلخواه",
+    "مرحله ۷: اولویت‌ها",
   ];
 
-  // فرمت کردن جواب‌ها (آرایه یا متن)
   const formatAnswer = (answer) => {
     if (Array.isArray(answer)) {
       return answer.length === 0 ? "—" : answer.map((a) => `• ${a}`).join("  ");
@@ -28,11 +27,15 @@ export default function ResultSummary({ answers }) {
   };
 
   return (
-    <div className="w-full bg-white/5 backdrop-blur-md rounded-xl p-4 md:p-6 text-sm md:text-base text-left space-y-4 border border-white/10">
+    <div dir="rtl" className="w-full bg-white/40 dark:bg-white/10 border dark:border-amber-400 shadow-lg dark:shadow-md shadow-blue-300 dark:shadow-amber-300 border-gray-900/80 backdrop-blur-md rounded-xl p-4 md:p-6 text-sm md:text-base text-left space-y-4">
       {keys.map((key, index) => (
         <div key={key}>
-          <h3 className="text-amber-300 font-bold mb-1">{steps[index]}</h3>
-          <p className="text-white/90">{formatAnswer(answers[key])}</p>
+          <h3 className="text-black dark:text-amber-300 text-right font-bold mb-1">
+            {titles[index]}
+          </h3>
+          <p className="text-gray-900 dark:text-white/90 text-right">
+            {formatAnswer(answers[key])}
+          </p>
         </div>
       ))}
     </div>
