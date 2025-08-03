@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
-
+import LoaderOverlay from "../components/LoaderOverlay";
 import GlassButton from "../components/GlassButton";
 function PathDetails() {
   const location = useLocation();
@@ -64,37 +64,7 @@ const navigate = useNavigate();
     fetchAnalysis();
   }, [answers]);
 
- if (loading) {
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br 
-      from-amber-400 via-blue-100 to-amber-500 dark:from-black dark:via-gray-800 dark:to-black text-gray-900 dark:text-white">
-      <div className="backdrop-blur-md bg-white/20 dark:bg-white/10 p-6 rounded-2xl border border-gray-600 dark:border-gray-700 shadow-xl shadow-blue-300 dark:shadow-amber-400">
-        <svg
-          className="animate-spin h-10 w-10 text-amber-500 dark:text-amber-400 mb-4"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-        >
-          <circle
-            className="opacity-25"
-            cx="12"
-            cy="12"
-            r="10"
-            stroke="currentColor"
-            strokeWidth="4"
-          />
-          <path
-            className="opacity-75"
-            fill="currentColor"
-            d="M4 12a8 8 0 018-8v8z"
-          />
-        </svg>
-        <p className="text-lg font-medium">در حال پردازش پاسخ‌های شما...</p>
-      </div>
-    </div>
-  );
-}
-
+if (loading) return <LoaderOverlay text="در حال دریافت تحلیل مسیر شغلی..." />;
   if (error) return <div className="p-6 text-red-400 text-center">خطا: {error}</div>;
   if (!analysis) return <div className="p-6 text-white text-center">تحلیلی دریافت نشد</div>;
 
@@ -116,6 +86,8 @@ const navigate = useNavigate();
   };
 
   return (
+    <>
+    {loading && <LoaderOverlay text="در حال دریافت تحلیل مسیر شغلی..." />}
 <div className="min-h-screen w-full from-amber-400 via-blue-100 to-amber-500 
   bg-gradient-to-br dark:from-black dark:via-gray-800 dark:to-black text-gray-800 dark:text-white 
   flex flex-col xl:flex-row-reverse items-center justify-center p-6 gap-6 xl:gap-10 font-sans">
@@ -188,14 +160,14 @@ const navigate = useNavigate();
   {/* دکمه پایان */}
   <GlassButton
     text="شروع دوباره"
-    className="bg-white/40 dark:bg-white/10 border text-gray-800 dark:text-white/0 border-blue-200 dark:border-amber-400 hover:bg-white/5 shadow-lg dark:shadow-md shadow-blue-400 dark:shadow-amber-400 hover:shadow-blue-500 dark:hover:shadow-amber-500 dark:hover:bg-amber-400/10 mt-6"
+    className="bg-white/40 dark:bg-white/10 border text-gray-800 dark:text-white/90 border-blue-200 dark:border-amber-400 hover:bg-white/5 shadow-lg dark:shadow-md shadow-blue-400 dark:shadow-amber-400 hover:shadow-blue-500 dark:hover:shadow-amber-500 dark:hover:bg-amber-400/10 mt-6"
     rippleColor="bg-white/30"
     onClick={() => navigate("/")}
   />
 
 </div>
 
-
+</>
   );
 }
 

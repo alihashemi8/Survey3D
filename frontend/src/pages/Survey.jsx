@@ -254,7 +254,7 @@ export default function Survey() {
         </button>
       </div>
       {/* فرم سوال */}
-      <div className="w-full md:w-1/2 z-10 backdrop-blur-lg bg-white/20 dark:bg-white/5 border border-gray-600/80 dark:border-amber-500/60 rounded-xl p-6 md:p-10 shadow-2xl space-y-6">
+      <div className="w-full md:w-1/2 z-10 backdrop-blur-lg bg-white/20 dark:bg-white/5 border border-gray-600/80 dark:border-amber-500/60 rounded-xl p-6 md:p-10 md:mt-10 shadow-2xl space-y-6">
         <div className="flex justify-between items-center mb-2">
           <span className="text-xs text-black dark:text-gray-400">
             سؤال {step + 1} از {steps.length}
