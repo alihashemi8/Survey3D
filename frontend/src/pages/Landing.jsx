@@ -1,60 +1,55 @@
-import { Canvas, useFrame } from "@react-three/fiber";
-import { useGLTF, OrbitControls } from "@react-three/drei";
-import { Suspense, useRef, useEffect, useState } from "react";
+import React, { useState, useEffect, Suspense } from "react";
+import { Canvas } from "@react-three/fiber";
+import { OrbitControls, useGLTF } from "@react-three/drei";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import Typewriter from "typewriter-effect";
+
 import GlassButton from "../components/GlassButton";
 import "../components/GlassButton.css";
+import StatsDisplay from "../components/StatsDisplay";
+import AuthForm from "../components/auth/AuthForm";  
+import useAuth from "../hooks/useAuth";
 
-// مدل سه‌بعدی وال‌-ای
-function WallEModel() {
+// مدل سه‌بعدی Wall-E
+function WallEModel(props) {
   const { scene } = useGLTF("/models/wall_e.glb");
-  const ref = useRef();
-
-  useFrame((state) => {
-    if (ref.current) {
-      ref.current.rotation.y += 0.005;
-      const baseY = -1.3;
-      const posX = 0.5;
-      ref.current.position.set(
-        posX,
-        Math.sin(state.clock.elapsedTime) * 0.2 + baseY,
-        0
-      );
-    }
-  });
-
-  return <primitive ref={ref} object={scene} scale={2.8} />;
+  return (
+    <primitive object={scene} scale={2.5} position={[0, -1.5, 0]} {...props} />
+  );
 }
 
-// مدل لوگو گوشه صفحه
-function LogoModel() {
-  const { scene } = useGLTF("/models/Logo.glb");
-  const ref = useRef();
-
-  useFrame(() => {
-    if (ref.current) {
-      ref.current.rotation.y += 0.01;
-    }
-  });
-
+// تایپ فارسی با تایپ‌رایتر
+function TypewriterText() {
   return (
-    <primitive ref={ref} object={scene} scale={0.02} position={[0, -2, 0]} />
+    <Typewriter
+      onInit={(typewriter) => {
+        typewriter
+          .typeString("آینده‌ات رو انتخاب کن!")
+          .pauseFor(2000)
+          .deleteAll()
+          .typeString("ادامه تحصیل یا بازار کار؟")
+          .pauseFor(2000)
+          .deleteAll()
+          .typeString("چند کلیک تا کشف مسیرت!")
+          .pauseFor(2000)
+          .start();
+      }}
+    />
   );
 }
 
 export default function Landing() {
   const navigate = useNavigate();
+  const { token, login, isLoggedIn } = useAuth();
+
+  const [showAuthBox, setShowAuthBox] = useState(false);
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
     const storedTheme = localStorage.getItem("theme");
-    const systemPrefersDark = window.matchMedia(
-      "(prefers-color-scheme: dark)"
-    ).matches;
-
-    if (storedTheme === "dark" || (!storedTheme && systemPrefersDark)) {
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    if (storedTheme === "dark" || (!storedTheme && prefersDark)) {
       document.documentElement.classList.add("dark");
       setIsDark(true);
     } else {
@@ -66,14 +61,16 @@ export default function Landing() {
   const toggleTheme = () => {
     const newTheme = isDark ? "light" : "dark";
     localStorage.setItem("theme", newTheme);
-
-    if (newTheme === "dark") {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-
+    document.documentElement.classList.toggle("dark", newTheme === "dark");
     setIsDark(!isDark);
+  };
+
+  const handleStartClick = () => {
+    if (token) {
+      navigate("/survey");
+    } else {
+      setShowAuthBox(true);
+    }
   };
 
   return (
@@ -84,7 +81,7 @@ export default function Landing() {
         dark:bg-gradient-to-br dark:from-black dark:via-gray-800 dark:to-black dark:text-white 
         flex flex-col-reverse md:flex-row items-center px-6 md:px-20 py-12 gap-12 md:gap-24"
       >
-        {/* دکمه دارک مود بالا چپ */}
+        {/* دکمه تغییر تم */}
         <div className="absolute top-4 left-4 z-50">
           <button
             onClick={toggleTheme}
@@ -92,26 +89,18 @@ export default function Landing() {
             aria-label="تغییر تم"
           >
             {isDark ? (
-              <svg
-                className="w-5 h-5 text-yellow-400"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4.22 2.03a1 1 0 011.42 0l.71.71a1 1 0 01-1.42 1.42l-.71-.71a1 1 0 010-1.42zM17 9a1 1 0 110 2h-1a1 1 0 110-2h1zM4.22 4.03a1 1 0 000 1.42l.71.71a1 1 0 001.42-1.42l-.71-.71a1 1 0 00-1.42 0zM3 9a1 1 0 100 2H2a1 1 0 100-2h1zm3.05 6.95a1 1 0 010-1.42l.71-.71a1 1 0 111.42 1.42l-.71.71a1 1 0 01-1.42 0zM10 16a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zm6.36-1.05a1 1 0 01-1.42 0l-.71-.71a1 1 0 011.42-1.42l.71.71a1 1 0 010 1.42z" />
+              <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1z..." />
               </svg>
             ) : (
-              <svg
-                className="w-5 h-5 text-slate-600"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
+              <svg className="w-5 h-5 text-slate-600" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M17.293 13.293A8 8 0 016.707 2.707a8 8 0 1010.586 10.586z" />
               </svg>
             )}
           </button>
         </div>
 
-        {/* متن و دکمه سمت راست */}
+        {/* متن، دکمه، آمار */}
         <motion.div
           dir="rtl"
           className="w-full md:w-1/2 space-y-8 text-center md:text-right"
@@ -120,20 +109,7 @@ export default function Landing() {
           transition={{ duration: 0.8 }}
         >
           <h1 className="text-3xl md:text-5xl font-extrabold leading-tight text-slate-800 dark:text-amber-500/90 tracking-tight min-h-[90px]">
-            <Typewriter
-              options={{
-                strings: [
-                  "آینده‌ات رو انتخاب کن!",
-                  "ادامه تحصیل یا بازار کار؟",
-                  "چند کلیک تا کشف مسیرت!",
-                ],
-                autoStart: true,
-                loop: true,
-                delay: 50,
-                deleteSpeed: 30,
-                pauseFor: 2000,
-              }}
-            />
+            <TypewriterText />
           </h1>
 
           <motion.p
@@ -142,26 +118,32 @@ export default function Landing() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6, duration: 0.8 }}
           >
-            با چند سؤال ساده مشخص کن که ادامه تحصیل برات مناسبه یا ورود به بازار
-            کار. فقط چند کلیک تا روشن شدن مسیرت فاصله داری.
+            با چند سؤال ساده مشخص کن که ادامه تحصیل برات مناسبه یا ورود به بازار کار.
+            فقط چند کلیک تا روشن شدن مسیرت فاصله داری.
           </motion.p>
 
-          <motion.div
-            className="flex justify-center md:justify-start"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 1.2, duration: 0.5 }}
-          >
-            <GlassButton
-              text="شروع نظرسنجی"
-              className="bg-white/40 dark:bg-white/10 border text-gray-800 dark:text-amber-500 border-blue-200 dark:border-amber-500 hover:bg-blue-100 shadow-xl hover:shadow-blue-200 dark:hover:shadow-amber-500 dark:hover:bg-amber-400/10"
-              rippleColor="bg-white/30"
-              onClick={() => navigate("/survey")}
-            />
-          </motion.div>
+<motion.div
+  className="flex flex-col items-center md:items-start gap-4 w-full max-w-xs"
+  initial={{ opacity: 0, scale: 0.9 }}
+  animate={{ opacity: 1, scale: 1 }}
+  transition={{ delay: 1.2, duration: 0.5 }}
+>
+  <GlassButton
+    text="شروع نظرسنجی"
+    className="w-[250px] mx-35 bg-white/40 dark:bg-white/10 border text-gray-800 dark:text-amber-500 border-blue-200 dark:border-amber-500 hover:bg-blue-100 shadow-xl hover:shadow-blue-200 dark:hover:shadow-amber-500 dark:hover:bg-amber-400/10"
+    rippleColor="bg-white/30"
+    onClick={handleStartClick}
+  />
+
+  <div className="w-[300px] mx-28">
+    <StatsDisplay />
+  </div>
+</motion.div>
+
+
         </motion.div>
 
-        {/* مدل سه‌بعدی سمت چپ */}
+        {/* مدل سه‌بعدی */}
         <motion.div
           className="w-full md:w-1/2 h-[300px] md:h-[500px]"
           initial={{ opacity: 0, scale: 0.8 }}
@@ -171,22 +153,41 @@ export default function Landing() {
           <Canvas camera={{ position: [0, 0, 5], fov: 50 }}>
             <ambientLight intensity={1} />
             <directionalLight position={[3, 3, 3]} intensity={1.5} />
-            <pointLight
-              position={[-2, -2, 3]}
-              intensity={90}
-              color={isDark ? "gold" : "#ADF0FF"} 
-            />
+            <pointLight position={[-2, -2, 3]} intensity={90} color={isDark ? "gold" : "#ADF0FF"} />
             <Suspense fallback={null}>
               <WallEModel />
             </Suspense>
             <OrbitControls enableZoom={false} enablePan={false} />
           </Canvas>
         </motion.div>
+        
+        
       </div>
+      
 
-      {/* ✅ فوتر */}
+      {/* فرم احراز هویت در وسط صفحه */}
+      {showAuthBox && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="relative  p-6 rounded-xl shadow-xl w-full max-w-md">
+            {/* دکمه بستن */}
+            <button
+              onClick={() => setShowAuthBox(false)}
+              className="absolute top-0 text-4xl right-0  text-gray-500 hover:text-red-500 "
+            >
+              ×
+            </button>
 
-
+            {/* فرم لاگین */}
+            <AuthForm
+              onLogin={(newToken) => {
+                login(newToken);
+                setShowAuthBox(false);
+                navigate("/survey");
+              }}
+            />
+          </div>
+        </div>
+      )}
     </>
   );
 }

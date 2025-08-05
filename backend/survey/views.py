@@ -6,6 +6,9 @@ from .utils import get_openai_client
 import os
 from dotenv import load_dotenv
 import re
+from django.http import JsonResponse
+from .models import SurveyResponse
+
 
 load_dotenv()
 
@@ -104,3 +107,22 @@ def chatgpt_analysis(request):
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 print("🔑 استفاده از کلید:", os.getenv("OPENAI_API_KEY"))
+
+@api_view(['GET'])
+def landing_stats(request):
+    all_results = SurveyResponse.objects.all() 
+    total = all_results.count()
+
+    majors = {}
+    for result in all_results:
+        first_answer = result.answers[0] if result.answers else None
+        if first_answer:
+            majors[first_answer] = majors.get(first_answer, 0) + 1
+
+    most_popular = max(majors, key=majors.get) if majors else None
+
+    return Response({
+        'most_popular_major': most_popular,
+        'total_participants': total,
+    })
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
