@@ -1,24 +1,35 @@
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, useEffect, Suspense, useRef } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, useGLTF } from "@react-three/drei";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import Typewriter from "typewriter-effect";
-
+import { useFrame } from "@react-three/fiber";
 import GlassButton from "../components/GlassButton";
 import "../components/GlassButton.css";
 import StatsDisplay from "../components/StatsDisplay";
-import AuthForm from "../components/auth/AuthForm";  
+import AuthForm from "../components/auth/AuthForm";
 import useAuth from "../hooks/useAuth";
 
 // مدل سه‌بعدی Wall-E
 function WallEModel(props) {
   const { scene } = useGLTF("/models/wall_e.glb");
-  return (
-    <primitive object={scene} scale={2.5} position={[0, -1.5, 0]} {...props} />
-  );
-}
+  const ref = useRef();
 
+  useFrame((state) => {
+    if (ref.current) {
+      ref.current.rotation.y += 0.003; // کمی چرخش نرم‌تر از اوا
+      const baseY = -1.5;
+      ref.current.position.set(
+        0,
+        Math.sin(state.clock.elapsedTime) * 0.15 + baseY, // حالت معلق نرم‌تر
+        0
+      );
+    }
+  });
+
+  return <primitive ref={ref} object={scene} scale={2.5} {...props} />;
+}
 // تایپ فارسی با تایپ‌رایتر
 function TypewriterText() {
   return (
@@ -48,7 +59,9 @@ export default function Landing() {
 
   useEffect(() => {
     const storedTheme = localStorage.getItem("theme");
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const prefersDark = window.matchMedia(
+      "(prefers-color-scheme: dark)"
+    ).matches;
     if (storedTheme === "dark" || (!storedTheme && prefersDark)) {
       document.documentElement.classList.add("dark");
       setIsDark(true);
@@ -89,11 +102,19 @@ export default function Landing() {
             aria-label="تغییر تم"
           >
             {isDark ? (
-              <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+              <svg
+                className="w-5 h-5 text-yellow-400"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
                 <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1z..." />
               </svg>
             ) : (
-              <svg className="w-5 h-5 text-slate-600" fill="currentColor" viewBox="0 0 20 20">
+              <svg
+                className="w-5 h-5 text-slate-600"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
                 <path d="M17.293 13.293A8 8 0 016.707 2.707a8 8 0 1010.586 10.586z" />
               </svg>
             )}
@@ -118,29 +139,27 @@ export default function Landing() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6, duration: 0.8 }}
           >
-            با چند سؤال ساده مشخص کن که ادامه تحصیل برات مناسبه یا ورود به بازار کار.
-            فقط چند کلیک تا روشن شدن مسیرت فاصله داری.
+            با چند سؤال ساده مشخص کن که ادامه تحصیل برات مناسبه یا ورود به بازار
+            کار. فقط چند کلیک تا روشن شدن مسیرت فاصله داری.
           </motion.p>
 
-<motion.div
-  className="flex flex-col items-center md:items-start gap-4 w-full max-w-xs"
-  initial={{ opacity: 0, scale: 0.9 }}
-  animate={{ opacity: 1, scale: 1 }}
-  transition={{ delay: 1.2, duration: 0.5 }}
->
-  <GlassButton
-    text="شروع نظرسنجی"
-    className="w-[250px] mx-35 bg-white/40 dark:bg-white/10 border text-gray-800 dark:text-amber-500 border-blue-200 dark:border-amber-500 hover:bg-blue-100 shadow-xl hover:shadow-blue-200 dark:hover:shadow-amber-500 dark:hover:bg-amber-400/10"
-    rippleColor="bg-white/30"
-    onClick={handleStartClick}
-  />
+          <motion.div
+            className="flex flex-col items-center md:items-start gap-4 w-full max-w-xs"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 1.2, duration: 0.5 }}
+          >
+            <GlassButton
+              text="شروع نظرسنجی"
+              className="w-[250px] mx-35 bg-white/40 dark:bg-white/10 border text-gray-800 dark:text-amber-500 border-blue-200 dark:border-amber-500 hover:bg-blue-100 shadow-xl hover:shadow-blue-200 dark:hover:shadow-amber-500 dark:hover:bg-amber-400/10"
+              rippleColor="bg-white/30"
+              onClick={handleStartClick}
+            />
 
-  <div className="w-[300px] mx-28">
-    <StatsDisplay />
-  </div>
-</motion.div>
-
-
+            <div className="w-[300px] mx-28">
+              <StatsDisplay />
+            </div>
+          </motion.div>
         </motion.div>
 
         {/* مدل سه‌بعدی */}
@@ -153,22 +172,23 @@ export default function Landing() {
           <Canvas camera={{ position: [0, 0, 5], fov: 50 }}>
             <ambientLight intensity={1} />
             <directionalLight position={[3, 3, 3]} intensity={1.5} />
-            <pointLight position={[-2, -2, 3]} intensity={90} color={isDark ? "gold" : "#ADF0FF"} />
+            <pointLight
+              position={[-2, -2, 3]}
+              intensity={90}
+              color={isDark ? "gold" : "#ADF0FF"}
+            />
             <Suspense fallback={null}>
               <WallEModel />
             </Suspense>
             <OrbitControls enableZoom={false} enablePan={false} />
           </Canvas>
         </motion.div>
-        
-        
       </div>
-      
 
       {/* فرم احراز هویت در وسط صفحه */}
       {showAuthBox && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="relative  p-6 rounded-xl shadow-xl w-full max-w-md">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 ">
+          <div className="relative  p-6 rounded-xl  w-full max-w-md">
             {/* دکمه بستن */}
             <button
               onClick={() => setShowAuthBox(false)}

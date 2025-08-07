@@ -1,9 +1,21 @@
 from pathlib import Path
 from decouple import config
 OPENAI_API_KEY = config("OPENAI_API_KEY")
+from datetime import timedelta
 
 
 
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    )
+}
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=5),
+    "AUTH_HEADER_TYPES": ("Bearer",),
+}
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -15,7 +27,7 @@ ALLOWED_HOSTS = ['*']  # در توسعه مشکلی نیست
 # ------------------------------------------------------
 # ✅ اپ‌های نصب‌شده
 INSTALLED_APPS = [
-    'corsheaders',                   # ← اضافه کن اول
+    'corsheaders',                   
     'rest_framework',
     'survey',
     'accounts',
@@ -103,3 +115,11 @@ USE_TZ = True
 STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = "your_email@gmail.com"
+EMAIL_HOST_PASSWORD = "your_app_password"  # نه پسورد معمولی، اپ پسورد
+

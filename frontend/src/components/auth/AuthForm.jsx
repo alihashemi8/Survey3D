@@ -1,113 +1,99 @@
 import React, { useState } from "react";
 
 export default function AuthForm({ onClose, onLogin }) {
-  const [step, setStep] = useState("input"); // input | verify
-  const [input, setInput] = useState("");
-  const [otp, setOtp] = useState("");
+  const [mode, setMode] = useState("login"); // login or register
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSendOtp = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!input) return alert("لطفاً شماره یا ایمیل را وارد کنید");
+    setError("");
+    setLoading(true);
+
+    const endpoint =
+      mode === "login"
+        ? "http://localhost:8000/api/login/"
+        : "http://localhost:8000/api/register/";
 
     try {
-      const res = await fetch("http://localhost:8000/api/send-otp/", {
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ identifier: input }),
+        body: JSON.stringify({ email, password }),
       });
 
       const data = await res.json();
-
-      if (res.ok) {
-        setStep("verify");
-      } else {
-        alert(data.message || "خطا در ارسال کد");
-      }
-    } catch (err) {
-      alert("خطا در اتصال به سرور");
-    }
-  };
-
-  const handleVerifyOtp = async (e) => {
-    e.preventDefault();
-    if (!otp) return alert("کد را وارد کنید");
-
-    try {
-      const res = await fetch("http://localhost:8000/api/verify-otp/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ identifier: input, otp }),
-      });
-
-      const data = await res.json();
-
       if (res.ok && data.token) {
         onLogin(data.token);
       } else {
-        alert(data.message || "کد اشتباه است");
+        setError(data.message || "خطا در ورود یا ثبت‌نام");
       }
     } catch (err) {
-      alert("خطا در تایید کد");
+      setError("خطا در اتصال به سرور");
     }
+
+    setLoading(false);
   };
 
   return (
     <div
-      className="bg-white dark:bg-gray-900 p-6 rounded-xl shadow-lg max-w-md mx-auto"
+      className="bg-white dark:bg-gray-900 p-6 rounded-xl shadow-lg max-w-md mx-auto relative"
       dir="rtl"
     >
       <button
         onClick={onClose}
-        className="absolute top-2 right-3 text-gray-500 hover:text-black dark:text-gray-300"
+        className="absolute top-2 right-3 text-gray-500 hover:text-black dark:text-gray-300 text-2xl font-bold"
         aria-label="بستن فرم"
       >
-
+        ×
       </button>
+
       <h2 className="text-2xl font-bold mb-4 text-center text-gray-800 dark:text-amber-400">
-        {step === "input" ? "ورود با شماره یا ایمیل" : "کد را وارد کنید"}
+        {mode === "login" ? "ورود به حساب" : "ثبت‌نام"}
       </h2>
 
-      <form onSubmit={step === "input" ? handleSendOtp : handleVerifyOtp}>
-        {step === "input" ? (
-          <input
-            type="text"
-            placeholder="شماره موبایل یا ایمیل"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            className="w-full mb-4 p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-400 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-            autoFocus
-          />
-        ) : (
-          <input
-            type="text"
-            placeholder="کد یک‌بار مصرف"
-            value={otp}
-            onChange={(e) => setOtp(e.target.value)}
-            className="w-full mb-4 p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-400 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-            autoFocus
-          />
+      <form onSubmit={handleSubmit}>
+        <input
+          type="email"
+          placeholder="ایمیل"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="w-full mb-4 p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-400 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+          required
+        />
+        <input
+          type="password"
+          placeholder="رمز عبور"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="w-full mb-4 p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-400 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+          required
+        />
+
+        {error && (
+          <p className="text-red-600 mb-3 text-center font-medium">{error}</p>
         )}
 
         <button
           type="submit"
-          className="w-full bg-amber-500 hover:bg-amber-600 text-white py-3 rounded-md font-semibold transition"
+          className="w-full bg-amber-500 hover:bg-amber-600 text-white py-3 rounded-md font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed"
+          disabled={loading}
         >
-          {step === "input" ? "دریافت کد یک‌بار مصرف" : "ورود"}
+          {loading ? "در حال ارسال..." : mode === "login" ? "ورود" : "ثبت‌نام"}
         </button>
       </form>
 
-      {step === "verify" && (
-        <p className="mt-4 text-center text-sm text-gray-600 dark:text-amber-300">
-          ارسال به: {input}{" "}
-          <button
-            className="text-amber-600 hover:underline ml-2"
-            onClick={() => setStep("input")}
-            type="button"
-          >
-            تغییر؟
-          </button>
-        </p>
-      )}
+      <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-300">
+        {mode === "login" ? "حساب ندارید؟" : "قبلاً ثبت‌نام کرده‌اید؟"}{" "}
+        <button
+          onClick={() => setMode(mode === "login" ? "register" : "login")}
+          className="text-amber-600 hover:underline"
+        >
+          {mode === "login" ? "ثبت‌نام کنید" : "وارد شوید"}
+        </button>
+      </p>
     </div>
   );
 }

@@ -3,7 +3,6 @@ import { OrbitControls, useGLTF } from "@react-three/drei";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Suspense, useEffect, useRef ,useState } from "react";
 import axios from "axios";
-
 import ResultSummary from "../components/ResultSummary";
 import { analyzePath } from "../utils/analyzePath";
 import { pathInfo } from "../utils/pathInfo";
@@ -96,33 +95,43 @@ export default function Result() {
 
   const analysis = analyzePath(answers || {});
 
-  // 🚀 ارسال به بک‌اند
-  useEffect(() => {
-    if (!answers || Object.keys(answers).length === 0) {
-      console.warn("❗ داده‌ای برای ارسال به بک‌اند وجود ندارد");
-      return;
-    }
+useEffect(() => {
+  if (!answers || Object.keys(answers).length === 0) {
+    console.warn("❗ داده‌ای برای ارسال به بک‌اند وجود ندارد");
+    return;
+  }
 
-    const sendToBackend = async () => {
-      try {
-        console.log("در حال ارسال به بک‌اند:", answers);
-        const response = await axios.post("http://localhost:8000/api/submit/", answers);
-        console.log("✅ Backend response:", response.data);
-      } catch (err) {
-        console.error("❌ Error sending data:", err.message);
+  const sendToBackend = async () => {
+    try {
+      console.log("در حال ارسال به بک‌اند:", answers);
+
+      // ارسال کل جواب‌ها به submit/
+      const response = await axios.post("http://localhost:8000/api/submit/", answers);
+      console.log("✅ Backend response:", response.data);
+
+      // 🆕 ارسال رشته محبوب (analysis.mainPathKey) به save-major/
+      if (analysis?.mainPathKey) {
+        await axios.post("http://localhost:8000/api/save-major/", {
+          major: analysis.mainPathKey,
+        });
+        console.log("✅ major ذخیره شد:", analysis.mainPathKey);
+      } else {
+        console.warn("⚠️ رشته‌ای برای ارسال وجود ندارد");
       }
-    };
+    } catch (err) {
+      console.error("❌ Error sending data:", err.message);
+    }
+  };
 
-    sendToBackend();
-  }, [answers]);
-
+  sendToBackend();
+}, [answers]);
   return (
     <div className="min-h-screen w-full bg-gradient-to-br  from-amber-400 via-blue-100 to-amber-500 dark:from-black dark:via-gray-800 dark:to-black text-white flex flex-col md:flex-row-reverse items-center justify-center gap-6 p-6 md:p-12">
       <div className="w-full md:w-1/2 h-[300px] md:h-[500px]">
         <Canvas camera={{ position: [0, 0, 5], fov: 50 }}>
           <ambientLight intensity={1} />
           <directionalLight position={[3, 3, 3]} intensity={1.2} />
-          <pointLight position={[-2, -2, 3]} intensity={100} color="gold" />
+          <pointLight position={[-2, -2, 3]} intensity={100} color={isDark ? "gold" : "deepskyblue"} />
           <Suspense fallback={null}>
             <EvaModel />
           </Suspense>
