@@ -37,4 +37,3 @@ class MajorPopularity(models.Model):
     def __str__(self):
         return f"{self.major} ({self.count})"
 
-

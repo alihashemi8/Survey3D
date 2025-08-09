@@ -1,16 +1,16 @@
+from django.db.models import Count
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.views.decorators.csrf import csrf_exempt
+from .models import ParticipantCount, UserProfile, MajorPopularity
 from django.http import JsonResponse
-from django.db.models import Count
 import json
-from .models import MajorPopularity ,UserProfile, ParticipantCount
 
-# ✅ ذخیره رشته انتخابی
+# 🟢 ذخیره رشته پیشنهادی
 @csrf_exempt
 def save_major(request):
     if request.method == 'POST':
@@ -22,30 +22,29 @@ def save_major(request):
                 obj.count += 1
                 obj.save()
                 return JsonResponse({'message': 'Saved successfully'})
-            else:
-                return JsonResponse({'error': 'رشته‌ای ارسال نشده'}, status=400)
+            return JsonResponse({'error': 'major not found in request'}, status=400)
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=400)
     return JsonResponse({'error': 'Invalid method'}, status=405)
 
-
-# ✅ آمار صفحه لندینگ
+# 🟢 آمار صفحه لندینگ
 @api_view(['GET'])
 def landing_stats(request):
-    total_participants = User.objects.count()
-    print(f"✅ تعداد کاربران: {total_participants}")
+    count_obj = ParticipantCount.objects.first()
+    total_participants = count_obj.total if count_obj else 0
 
-    # محبوب‌ترین رشته از MajorPopularity
-    popular_major = MajorPopularity.objects.order_by('-count').first()
+    popular_major = (
+        MajorPopularity.objects.values('major', 'count')
+        .order_by('-count')
+        .first()
+    )
 
     return Response({
         'total_participants': total_participants,
-        'most_popular_major': popular_major.major if popular_major else 'نامشخص'
+        'most_popular_major': popular_major['major'] if popular_major else None
     })
 
-
-
-# ✅ ساخت توکن JWT برای کاربر
+# 🟢 توکن‌سازی JWT
 def get_tokens_for_user(user):
     refresh = RefreshToken.for_user(user)
     return {
@@ -53,8 +52,7 @@ def get_tokens_for_user(user):
         "access": str(refresh.access_token),
     }
 
-
-# ✅ ثبت‌نام
+# 🟢 ثبت‌نام
 @api_view(["POST"])
 def register(request):
     email = request.data.get("email")
@@ -67,17 +65,16 @@ def register(request):
         return Response({"message": "کاربری با این ایمیل وجود دارد"}, status=400)
 
     user = User.objects.create_user(username=email, email=email, password=password)
-    
-    # افزایش شمارنده ثبت‌نام
-    count_obj, created = ParticipantCount.objects.get_or_create(id=1)
+    UserProfile.objects.create(email=email)
+
+    count_obj, _ = ParticipantCount.objects.get_or_create(id=1)
     count_obj.total += 1
     count_obj.save()
 
     tokens = get_tokens_for_user(user)
     return Response({"token": tokens["access"]}, status=201)
 
-
-# ✅ ورود
+# 🟢 ورود
 @api_view(["POST"])
 def login(request):
     email = request.data.get("email")
@@ -88,4 +85,9 @@ def login(request):
         return Response({"message": "ایمیل یا رمز اشتباه است"}, status=401)
 
     tokens = get_tokens_for_user(user)
+
+    count_obj, _ = ParticipantCount.objects.get_or_create(id=1)
+    count_obj.total += 1
+    count_obj.save()
+
     return Response({"token": tokens["access"]}, status=200)
